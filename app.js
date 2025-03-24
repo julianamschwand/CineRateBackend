@@ -22,7 +22,7 @@ const dbConnection = mysql.createPool(dbOptions);
 // Session Middleware
 app.use(
   session({
-    key: "session_id",
+    key: "SessionId",
     secret: process.env.SESSION_SECRET,
     store: sessionStore,
     resave: false,
