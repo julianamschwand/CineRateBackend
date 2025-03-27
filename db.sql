@@ -2,7 +2,8 @@ create table UserData(
     UserDataId int auto_increment primary key,
     Username varchar(30) unique,
     Email varchar(50) unique,
-    UserPassword varchar(255)
+    UserPassword varchar(255),
+    UserRole varchar()
 );
 create table Comments(
     CommentId int auto_increment primary key,
