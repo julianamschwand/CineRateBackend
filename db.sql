@@ -17,14 +17,14 @@ create table Comments(
     Content text,
     fk_UserDataId int,
     fk_MovieId int,
-    foreign key fk_UserDataId references UserData(UserDataId),
-    foreign key fk_MovieId references Movies(MovieId)
+    foreign key (fk_UserDataId) references UserData(UserDataId) on delete cascade,
+    foreign key (fk_MovieId) references Movies(MovieId) on delete cascade
 );
 create table Ratings(
     RatingId int auto_increment primary key,
     RatingValue decimal(2,1),
     fk_UserDataId int,
     fk_MovieId int,
-    foreign key fk_UserDataId references UserData(UserDataId),
-    foreign key fk_MovieId references Movies(MovieId)
+    foreign key (fk_UserDataId) references UserData(UserDataId) on delete cascade,
+    foreign key (fk_MovieId) references Movies(MovieId) on delete cascade
 );
