@@ -3,7 +3,7 @@ create table UserData(
     Username varchar(30) unique,
     Email varchar(50) unique,
     UserPassword varchar(255),
-    UserRole enum('admin', 'user') default 'user'
+    UserRole enum('admin', 'mod' 'user') default 'user'
 );
 create table Movies(
     MovieId int auto_increment primary key,
