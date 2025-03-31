@@ -93,6 +93,33 @@ app.post('/logout', (req, res) => {
   });
 });
 
+app.post('/makemod', async (req, res) => {
+  const {userdataid} = req.body
+  if (!req.session.user) {
+    if (!userdataid) {
+      return res.status(400).json({message: "Missing data"})
+    }
+    
+    try {
+      const [results] = db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+      
+      if (results[0] === "admin"){
+        try {
+
+        } catch (error) {
+          
+        }
+      }
+    } catch (error) {
+
+    }
+  } 
+  res.status(401).json({ message: 'Unauthorized' })
+})
+app.post('/makeadmin', async (req, res) => {
+
+})
+
 //////////////////////////////////////////
 
 const PORT = process.env.PORT || 3000;
