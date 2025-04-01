@@ -7,7 +7,7 @@ create table UserData(
 );
 create table Movies(
     MovieId int auto_increment primary key,
-    PlaybackId varchar(11) unique,
+    PlaybackId char(11) unique,
     Poster text
 );
 create table Languages(
