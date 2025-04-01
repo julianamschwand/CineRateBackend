@@ -107,7 +107,7 @@ app.post('/makemod', async (req, res) => {
       if (userrole[0] === "admin" && updatinguserrole[0].UserRole !== "admin") {
         try {
           db.query("update UserData set UserRole = mod where UserDataId = ?", [userdataid])
-          return res.status(200).json({message: "Successfully made '{updatinguserrole[0].Username}' a moderator"})
+          return res.status(200).json({message: `Successfully made '${updatinguserrole[0].Username}' a moderator`})
         } catch (error) {
           console.error("Error:", error)
           return res.status(500).json({error: "An error happened while updating the database"})
@@ -121,7 +121,30 @@ app.post('/makemod', async (req, res) => {
 })
 
 app.post('/makeadmin', async (req, res) => {
+  const {userdataid} = req.body
+  if (!req.session.user) {
+    if (!userdataid) {
+      return res.status(400).json({message: "Missing data"})
+    }
+    
+    try {
+      const [userrole] = db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+      const [updatingusername] = db.query("select Username from UserData where UserDataId = ?", [userdataid])
 
+      if (userrole[0] === "admin") {
+        try {
+          db.query("update UserData set UserRole = mod where UserDataId = ?", [userdataid])
+          return res.status(200).json({message: `Successfully made '${updatingusername[0]}' a moderator`})
+        } catch (error) {
+          console.error("Error:", error)
+          return res.status(500).json({error: "An error happened while updating the database"})
+        }
+      }
+    } catch (error) {
+      return res.status(500).json({error: "An error happened while checking the users role"})
+    }
+  } 
+  res.status(401).json({ message: 'Unauthorized' })
 })
 
 //////////////////////////////////////////
