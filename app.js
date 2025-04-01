@@ -46,7 +46,7 @@ app.post('/register', async (req, res) => {
     res.status(200).json({message: "User registered successfully", userId: result.insertId})
   } catch (error) {
     console.error("Error:", error)
-    res.status(500).json({message: "An Error happend while registering"})
+    res.status(500).json({error: "An Error happend while registering"})
   }
 })
 
@@ -90,8 +90,8 @@ app.post('/logout', (req, res) => {
       }
       res.clearCookie('SessionId')
       res.json({ message: 'Logged out successfully' })
-  });
-});
+  })
+})
 
 app.post('/makemod', async (req, res) => {
   const {userdataid} = req.body
@@ -101,21 +101,25 @@ app.post('/makemod', async (req, res) => {
     }
     
     try {
-      const [results] = db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
-      
-      if (results[0] === "admin"){
-        try {
+      const [userrole] = db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+      const [updatinguserrole] = db.query("select UserRole, Username from UserData where UserDataId = ?", [userdataid])
 
+      if (userrole[0] === "admin" && updatinguserrole[0].UserRole !== "admin") {
+        try {
+          db.query("update UserData set UserRole = mod where UserDataId = ?", [userdataid])
+          return res.status(200).json({message: "Successfully made '{updatinguserrole[0].Username}' a moderator"})
         } catch (error) {
-          
+          console.error("Error:", error)
+          return res.status(500).json({error: "An error happened while updating the database"})
         }
       }
     } catch (error) {
-
+      return res.status(500).json({error: "An error happened while checking the users role"})
     }
   } 
   res.status(401).json({ message: 'Unauthorized' })
 })
+
 app.post('/makeadmin', async (req, res) => {
 
 })
