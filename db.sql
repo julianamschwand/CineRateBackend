@@ -10,6 +10,11 @@ create table Movies(
     PlaybackId varchar(11) unique,
     Poster text
 );
+create table Languages(
+    LanguageId int auto_increment primary key,
+    LanguageCode char(2) unique,
+    LanguageName varchar(30)
+);
 create table MovieTranslations(
     MovieTranslationId int auto_increment primary key,
     Title varchar(100),
@@ -18,11 +23,6 @@ create table MovieTranslations(
     fk_LanguageId int,
     foreign key (fk_MovieId) references Movies(MovieId) on delete cascade,
     foreign key (fk_LanguageId) references Languages(LanguageId) on delete cascade
-);
-create table Languages(
-    LanguageId int auto_increment primary key,
-    LanguageCode char(2) unique,
-    LanguageName varchar(30)
 );
 create table Comments(
     CommentId int auto_increment primary key,

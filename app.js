@@ -78,7 +78,15 @@ app.post('/login', async (req, res) => {
 
 app.get('/userdata', async (req, res) => {
   if (req.session.user) {
-    return res.status(200).json({id: req.session.user.id, username: req.session.user.username, email: req.session.user.email})
+    try {
+      const [results] = await db.query("select * from UserData where UserDataId = ?", [req.session.user.id])
+      const user = results[0]
+
+      return res.status(200).json({id: user.UserDataId, username: user.Username, email: user.Email, role: user.UserRole})
+    } catch (error) {
+      console.error("Error:", error)
+      return res.status(500).json({error: "Error retrieving data from the database"})
+    }
   }
   res.status(401).json({ message: 'Unauthorized' })
 })
@@ -95,18 +103,18 @@ app.post('/logout', (req, res) => {
 
 app.post('/makemod', async (req, res) => {
   const {userdataid} = req.body
-  if (!req.session.user) {
+  if (req.session.user) {
     if (!userdataid) {
       return res.status(400).json({message: "Missing data"})
     }
     
     try {
-      const [userrole] = db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
-      const [updatinguserrole] = db.query("select UserRole, Username from UserData where UserDataId = ?", [userdataid])
+      const [userrole] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+      const [updatinguserrole] = await db.query("select UserRole, Username from UserData where UserDataId = ?", [userdataid])
 
-      if (userrole[0] === "admin" && updatinguserrole[0].UserRole !== "admin") {
+      if (userrole[0].UserRole === "admin" && updatinguserrole[0].UserRole !== "admin") {
         try {
-          db.query("update UserData set UserRole = mod where UserDataId = ?", [userdataid])
+          await db.query("update UserData set UserRole = 'mod' where UserDataId = ?", [userdataid])
           return res.status(200).json({message: `Successfully made '${updatinguserrole[0].Username}' a moderator`})
         } catch (error) {
           console.error("Error:", error)
@@ -122,19 +130,46 @@ app.post('/makemod', async (req, res) => {
 
 app.post('/makeadmin', async (req, res) => {
   const {userdataid} = req.body
-  if (!req.session.user) {
+  if (req.session.user) {
     if (!userdataid) {
       return res.status(400).json({message: "Missing data"})
     }
     
     try {
-      const [userrole] = db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
-      const [updatingusername] = db.query("select Username from UserData where UserDataId = ?", [userdataid])
+      const [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+      const [updatinguser] = await db.query("select Username from UserData where UserDataId = ?", [userdataid])
 
-      if (userrole[0] === "admin") {
+      if (user[0] === "admin") {
         try {
-          db.query("update UserData set UserRole = mod where UserDataId = ?", [userdataid])
-          return res.status(200).json({message: `Successfully made '${updatingusername[0]}' a moderator`})
+          await db.query("update UserData set UserRole = 'admin' where UserDataId = ?", [userdataid])
+          return res.status(200).json({message: `Successfully made '${updatinguser[0].Username}' an admin`})
+        } catch (error) {
+          console.error("Error:", error)
+          return res.status(500).json({error: "An error happened while updating the database"})
+        }
+      }
+    } catch (error) {
+      return res.status(500).json({error: "An error happened while checking the users role"})
+    }
+  } 
+  res.status(401).json({ message: 'Unauthorized' })
+})
+
+app.post('/makeuser', async (req, res) => {
+  const {userdataid} = req.body
+  if (req.session.user) {
+    if (!userdataid) {
+      return res.status(400).json({message: "Missing data"})
+    }
+    
+    try {
+      const [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+      const [updatinguser] = await db.query("select UserRole, Username from UserData where UserDataId = ?", [userdataid])
+
+      if (user[0].UserRole === "admin" && updatinguser[0].UserRole !== "admin") {
+        try {
+          await db.query("update UserData set UserRole = 'user' where UserDataId = ?", [userdataid])
+          return res.status(200).json({message: `Successfully made '${updatinguserrole[0].Username}' a user`})
         } catch (error) {
           console.error("Error:", error)
           return res.status(500).json({error: "An error happened while updating the database"})
