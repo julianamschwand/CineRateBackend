@@ -46,7 +46,7 @@ app.post('/register', async (req, res) => {
     try {
       const hashedpassword = await bcrypt.hash(password, 10)
       const result = await db.query("insert into UserData (Username, Email, UserPassword) values (?,?,?)", [username, email, hashedpassword])
-      req.session.user = { id: result.insertId, username: username, email: email }
+      req.session.user = { id: result.insertId }
       res.status(200).json({success: true, message: "User registered successfully", userId: result.insertId})
     } catch (error) {
       console.error("Error:", error)
@@ -69,7 +69,7 @@ app.post('/login', async (req, res) => {
     const isPasswordValid = await bcrypt.compare(password, user.UserPassword)
     if (!isPasswordValid) return res.status(401).json({success: false, error: "Wrong password"})
 
-    req.session.user = { id: user.UserDataId, username: user.Username, email: email }
+    req.session.user = { id: user.UserDataId }
     res.status(200).json({success: true, message: "User successfully logged in"})
   } catch (error) {
     console.error("Error:", error)
@@ -279,8 +279,8 @@ app.patch('/edituser', async (req, res) => {
   if (!req.session.user) return res.status(401).json({success: false, message: 'Unauthorized'})
 
   try {
-    const [dbusername] = db.query("select * from UserData where Username = ?", [username])
-    const [dbemail] = db.query("select * from UserData where Email = ?", [email])
+    const [dbusername] = await db.query("select * from UserData where Username = ?", [username])
+    const [dbemail] = await db.query("select * from UserData where Email = ?", [email])
 
     if (dbusername.length !== 0) return res.status(400).json({success: false, error: "Username is taken"})
     if (dbemail.length !== 0) return res.status(400).json({success: false, error: "E-Mail is taken"})
@@ -288,7 +288,12 @@ app.patch('/edituser', async (req, res) => {
     try {
       if (username) await db.query("update UserData set Username = ? where UserDataId = ?", [username, req.session.user.id])
       if (email) await db.query("update UserData set Email = ? where UserDataId = ?", [email, req.session.user.id])
-      if (password) await db.query("update UserData set UserPassword = ? where UserDataId = ?", [password, req.session.user.id])
+      if (password) {
+        const hashedpassword = await bcrypt.hash(password, 10)
+        await db.query("update UserData set UserPassword = ? where UserDataId = ?", [hashedpassword, req.session.user.id])
+      }
+      
+      res.status(200).json({success: true, message: "Successfully updated the user"})
     } catch (error) {
       console.error("Error:", error)
       res.status(500).json({success: false, error: "Error while updating the database"})
@@ -297,6 +302,28 @@ app.patch('/edituser', async (req, res) => {
     console.error("Error:", error)
     res.status(500).json({success: false, error: "Error while fetching data from database"})
   }
+})
+
+app.get("/getmoviedata", async (req, res) => {
+  const {movieid, languagecode} = req.body
+
+})
+
+app.get("/getallmoviedata", async (req, res) => {
+  const {movieid, languagecode} = req.body
+
+})
+
+app.patch("/getlanguages", async (req, res) => {
+
+}) 
+
+app.patch("/editmovie", async (req, res) => {
+  const {movieid, title, description, playbackid, poster} = req.body
+})
+
+app.delete("/deletemovie", async (req, res) => {
+  const {movieid} = req.body
 })
 
 //////////////////////////////////////////
