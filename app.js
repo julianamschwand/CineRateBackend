@@ -218,9 +218,9 @@ app.post('/addmovie', async (req, res) => {
           for (const lang of languagecodes) {
             if (title.hasOwnProperty(lang) && description.hasOwnProperty(lang)) {
               let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [lang])
-              languageid = languageid[0]
-              
-              await db.query("insert into MovieTranslations (Title, MovieDescription, fk_LanguageId, fk_MovieId) values (?,?,?,?)", [title[lang], description[lang], languageid[0].LanguageId, movieid])
+              languageid = languageid[0].LanguageId
+
+              await db.query("insert into MovieTranslations (Title, MovieDescription, fk_LanguageId, fk_MovieId) values (?,?,?,?)", [title[lang], description[lang], languageid, movieid])
             }
           }
           res.status(200).json({message: "Successfully inserted the movie"})
@@ -239,6 +239,26 @@ app.post('/addmovie', async (req, res) => {
   } catch (error) {
     console.error("Error:", error)
     res.status(500).json({error: "Error while checking the users role"})
+  }
+})
+
+app.get('/getmovies', async (req, res) => {
+  const {languagecode} = req.body
+  if (!languagecode) return res.status(400).json({error: "Missing data"})
+
+  try {
+    let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [languagecode])
+    languageid = languageid[0].LanguageId
+    try {
+      const [movies] = await db.query("select MovieId, Title, MovieDescription, PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where fk_LanguageId = ?", [languageid])
+      res.status(200).json(movies)
+    } catch (error) {
+      console.error("Error:", error)
+      res.status(500).json({error: "Error while fetching movies"})
+    }
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({error: "Error while fetching the language id"})
   }
 })
 
