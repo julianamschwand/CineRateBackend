@@ -306,12 +306,75 @@ app.patch('/edituser', async (req, res) => {
 
 app.get("/getmoviedata", async (req, res) => {
   const {movieid, languagecode} = req.body
+  if (!movieid || !languagecode) return res.status(400).json({success: false, error: "Missing data"})
 
+  try {
+    let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [languagecode])
+    languageid = languageid[0].LanguageId
+    try {
+      let [movie] = await db.query("select MovieId, Title, MovieDescription, PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where fk_LanguageId = ? and MovieId = ?", [languageid, movieid])
+      movie = movie[0]
+      res.status(200).json({success: true, movie: movie})
+    } catch (error) {
+      console.error("Error:", error)
+      res.status(500).json({success: false, error: "Error while fetching the movie"})
+    }
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error while fetching the language id"})
+  }
 })
 
 app.get("/getallmoviedata", async (req, res) => {
-  const {movieid, languagecode} = req.body
+  const {movieid} = req.body
+  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
+  
+  try {
+    const [languageids] = await db.query("select fk_LanguageId from MovieTranslations where fk_MovieId = ?", [movieid])
 
+    try {
+      let languagecodes = []
+
+      for (lang of languageids) {
+        const [result] = await db.query("select LanguageCode from Languages where LanguageId = ?", [lang.fk_LanguageId])
+        languagecodes.push(result[0].LanguageCode)
+      }
+        try {
+          let [titles] = await db.query("select Title from MovieTranslations where fk_MovieId = ?", [movieid])
+          let [descriptions] = await db.query("select MovieDescription from MovieTranslations where fk_MovieId = ?", [movieid])
+
+          try {
+            let languageobjects = ""
+            let index = 0
+            languagecodes.forEach((code) => {
+              languageobjects += `JSON_OBJECT('Title', '${titles[index].Title}', 'Description', '${descriptions[index].MovieDescription}') as '${code}',`
+              index++
+            })
+    
+            const moviequery = `select MovieId, ${languageobjects} PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where MovieId = ?`
+  
+            let [movie] = await db.query(moviequery, [movieid]) 
+
+            movie[0].de = JSON.parse(movie[0].de);
+            movie[0].en = JSON.parse(movie[0].en);  
+
+            res.status(200).json({success: true, movie: movie[0]})
+          } catch (error) {
+            console.error("Error:", error)
+            res.status(500).json({success: false, error: "Error while fetching the movie"})
+          }
+        } catch (error) {
+          console.error("Error:", error)
+          res.status(500).json({success: false, error: "Error while fetching translations"})
+        }
+    } catch (error) {
+      console.error("Error:", error)
+      res.status(500).json({success: false, error: "Error while fetching the language codes"})
+    }
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error while fetching the available language IDs"})
+  }
 })
 
 app.patch("/getlanguages", async (req, res) => {
