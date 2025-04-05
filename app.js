@@ -262,7 +262,7 @@ app.get('/getmovies', async (req, res) => {
     let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [languagecode])
     languageid = languageid[0].LanguageId
     try {
-      const [movies] = await db.query("select MovieId, Title, MovieDescription, PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where fk_LanguageId = ?", [languageid])
+      let [movies] = await db.query("select MovieId, coalesce(Title, (select Title from MovieTranslations where fk_MovieId = MovieId and fk_LanguageId = 1), 'none') as 'Title', coalesce(MovieDescription, (select MovieDescription from MovieTranslations where fk_MovieId = MovieId and fk_LanguageId = 1), 'none') as 'Description', PlaybackId, Poster from Movies left join MovieTranslations on MovieId = fk_MovieId and fk_LanguageId = ?", [languageid])
       res.status(200).json({success: true, movies: movies})
     } catch (error) {
       console.error("Error:", error)
