@@ -411,7 +411,37 @@ app.get("/getlanguages", async (req, res) => {
 
 app.patch("/editmovie", async (req, res) => {
   const {movieid, title, description, playbackid, poster} = req.body
+  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
+  if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
+  
+    try {
+      let [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+      user = user[0]
+      if (user.UserRole !== "admin" && user.UserRole !== "mod") return res.status(403).json({success: false, error: "Forbidden"})
+  
+      try {
+        let [movie] = await db.query("select * from Movies where MovieId = ?", [movieid])
+        if (movie.length === 0) return res.status(404).json({succes: false, error: "Movie not found"})
 
+        try {
+          if (playbackid) {
+            await db.query("update Movies set PlaybackId = ? where MovieId = ?", [playbackid, movieid])
+          }
+          if (poster) {
+            await db.query("update Movies set Poster = ? where MovieId = ?")
+          }
+        } catch (error) {
+          console.error("Error:", error)
+          res.status(500).json({success: false, error: "Error while updating the movie"})
+        }
+      } catch (error) {
+        console.error("Error:", error)
+        res.status(500).json({success: false, error: "Error while fetching the movie ID"})
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      res.status(500).json({success: false, error: "Error while fetching userrole"})
+    }
 })
 
 app.delete("/deletemovie", async (req, res) => {
@@ -437,7 +467,7 @@ app.delete("/deletemovie", async (req, res) => {
       }
     } catch (error) {
       console.error("Error:", error)
-      res.status(500).json({success: false, error: "Error while getching the movie ID"})
+      res.status(500).json({success: false, error: "Error while fetching the movie ID"})
     }
   } catch (error) {
     console.error("Error:", error)
