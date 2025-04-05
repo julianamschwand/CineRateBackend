@@ -344,19 +344,23 @@ app.get("/getallmoviedata", async (req, res) => {
           let [descriptions] = await db.query("select MovieDescription from MovieTranslations where fk_MovieId = ?", [movieid])
 
           try {
-            let languageobjects = ""
+            let titlelanguages = ""
+            let descriptionlanguages = ""
             let index = 0
             languagecodes.forEach((code) => {
-              languageobjects += `JSON_OBJECT('Title', '${titles[index].Title}', 'Description', '${descriptions[index].MovieDescription}') as '${code}',`
+              titlelanguages += `'${code}', '${titles[index].Title}',`
+              descriptionlanguages += `'${code}', '${descriptions[index].MovieDescription}',`
               index++
             })
+            titlelanguages = titlelanguages.slice(0,-1)
+            descriptionlanguages = descriptionlanguages.slice(0,-1)
     
-            const moviequery = `select MovieId, ${languageobjects} PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where MovieId = ?`
+            const moviequery = `select MovieId, json_object(${titlelanguages}) as Title, json_object(${descriptionlanguages}) as Description, PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where MovieId = ?`
   
             let [movie] = await db.query(moviequery, [movieid]) 
 
-            movie[0].de = JSON.parse(movie[0].de);
-            movie[0].en = JSON.parse(movie[0].en);  
+            movie[0].Title = JSON.parse(movie[0].Title);
+            movie[0].Description = JSON.parse(movie[0].Description);  
 
             res.status(200).json({success: true, movie: movie[0]})
           } catch (error) {
@@ -389,6 +393,7 @@ app.get("/getlanguages", async (req, res) => {
 
 app.patch("/editmovie", async (req, res) => {
   const {movieid, title, description, playbackid, poster} = req.body
+
 })
 
 app.delete("/deletemovie", async (req, res) => {
@@ -433,6 +438,7 @@ app.delete("/deletecomment", async (req,res) => {
   const {commentid} = req.body
   if (!commentid) return res.status(400).json({success: false, error: "Missing data"})
 })
+
 //////////////////////////////////////////
 
 const PORT = process.env.PORT || 3000;
