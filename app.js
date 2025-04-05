@@ -424,15 +424,56 @@ app.patch("/editmovie", async (req, res) => {
         if (movie.length === 0) return res.status(404).json({succes: false, error: "Movie not found"})
 
         try {
-          if (playbackid) {
-            await db.query("update Movies set PlaybackId = ? where MovieId = ?", [playbackid, movieid])
-          }
-          if (poster) {
-            await db.query("update Movies set Poster = ? where MovieId = ?")
+          let [languagecodes] = await db.query("select LanguageCode from Languages")
+          languagecodes = languagecodes.map(lang => lang.LanguageCode)
+
+          try {
+            if (playbackid) {
+              await db.query("update Movies set PlaybackId = ? where MovieId = ?", [playbackid, movieid])
+            }
+            if (poster) {
+              await db.query("update Movies set Poster = ? where MovieId = ?", [poster, movieid])
+            }
+            if (title) {
+              for (const lang of languagecodes) {
+                if (title.hasOwnProperty(lang)) {
+                  let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [lang])
+                  languageid = languageid[0].LanguageId
+
+                  const [titles] = await db.query("select * from MovieTranslation where fk_MovieId = ? and fk_LanguageId = ?", [movieid, lang])
+
+                  if (titles.length === 0) {
+                    await db.query("insert into MovieTranslations (Title, fk_MovieId, fk_LanguageId) values (?,?,?)", [title, movieid, lang])
+                  } else {
+                    await db.query("update MovieTranslations set Title = ? where fk_MovieId = ? and fk_LanguageId = ?", [title, movieid, lang])
+                  }
+                }
+              }
+            }
+            if (description) {
+              for (const lang of languagecodes) {
+                if (description.hasOwnProperty(lang)) {
+                  let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [lang])
+                  languageid = languageid[0].LanguageId
+
+                  const [descriptions] = await db.query("select * from MovieTranslation where fk_MovieId = ? and fk_LanguageId = ?", [movieid, lang])
+
+                  if (descriptions.length === 0) {
+                    await db.query("insert into MovieTranslations (MovieDescription, fk_MovieId, fk_LanguageId) values (?,?,?)", [description, movieid, lang])
+                  } else {
+                    await db.query("update MovieTranslations set MovieDescription = ? where fk_MovieId = ? and fk_LanguageId = ?", [description, movieid, lang])
+                  }
+                }
+              }
+            }
+            res.status(200).json({success: false, message: "Successfully updated the movie"})
+          } catch (error) {
+            console.error("Error:", error)
+            res.status(500).json({success: false, error: "Error while updating the movie"})
           }
         } catch (error) {
           console.error("Error:", error)
-          res.status(500).json({success: false, error: "Error while updating the movie"})
+          res.status(500).json({success: false, error: "Error while fetching languages"})
         }
       } catch (error) {
         console.error("Error:", error)
