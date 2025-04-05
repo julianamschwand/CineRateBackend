@@ -377,8 +377,14 @@ app.get("/getallmoviedata", async (req, res) => {
   }
 })
 
-app.patch("/getlanguages", async (req, res) => {
-
+app.get("/getlanguages", async (req, res) => {
+  try {
+    const [languages] = await db.query("select * from Languages")
+    res.status(200).json({success: true, languages: languages})
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error while fetching languages from the database"})
+  }
 }) 
 
 app.patch("/editmovie", async (req, res) => {
@@ -386,6 +392,14 @@ app.patch("/editmovie", async (req, res) => {
 })
 
 app.delete("/deletemovie", async (req, res) => {
+  const {movieid} = req.body
+})
+
+app.get("/getrating", async (req, res) => {
+  const {movieid} = req.body
+})
+
+app.get("/getcomments", async (req, res) => {
   const {movieid} = req.body
 })
 
