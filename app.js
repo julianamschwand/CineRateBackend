@@ -37,17 +37,17 @@ app.post('/register', async (req, res) => {
   const {username, email, password} = req.body
   if (!username || !email || !password ) return res.status(400).json({success: false, error: "Missing data"})   
   try {
-    const [dbusername] = db.query("select * from UserData where Username = ?", [username])
-    const [dbemail] = db.query("select * from UserData where Email = ?", [email])
+    const [dbusername] = await db.query("select * from UserData where Username = ?", [username])
+    const [dbemail] = await db.query("select * from UserData where Email = ?", [email])
 
     if (dbusername.length !== 0) return res.status(400).json({success: false, error: "Username is taken"})
     if (dbemail.length !== 0) return res.status(400).json({success: false, error: "E-Mail is taken"})
 
     try {
       const hashedpassword = await bcrypt.hash(password, 10)
-      const result = await db.query("insert into UserData (Username, Email, UserPassword) values (?,?,?)", [username, email, hashedpassword])
+      const [result] = await db.query("insert into UserData (Username, Email, UserPassword) values (?,?,?)", [username, email, hashedpassword])
       req.session.user = { id: result.insertId }
-      res.status(200).json({success: true, message: "User registered successfully", userId: result.insertId})
+      res.status(200).json({success: true, message: "User registered successfully", userdataid: result.insertId})
     } catch (error) {
       console.error("Error:", error)
       res.status(500).json({success: false, error: "Error while registering"})
@@ -186,13 +186,13 @@ app.delete('/deleteuser', async (req, res) => {
   if (!req.session.user) return res.status(401).json({success: false, message: 'Unauthorized'})
 
   try {
-    let [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+    let [user] = await db.query("select UserDataId, UserRole from UserData where UserDataId = ?", [req.session.user.id])
     user = user[0]
-    let [deletinguser] = await db.query("select UserRole, Username from UserData where UserDataId = ?", [userdataid])
+    let [deletinguser] = await db.query("select UserDataId, UserRole, Username from UserData where UserDataId = ?", [userdataid])
     if (user.length === 0) return res.status(404).json({success: false, error: "User not found"})
     deletinguser = deletinguser[0]
 
-    if ((user.UserRole !== "admin" && user.UserRole !== "mod") || deletinguser.UserRole === "admin") return res.status(403).json({success: false, error: "Forbidden"})
+    if ((user.UserRole !== "admin" && user.UserRole !== "mod" && user.UserDataId !== deletinguser.UserDataId) || deletinguser.UserRole === "admin") return res.status(403).json({success: false, error: "Forbidden"})
     
     try {
       await db.query("delete from UserData where UserDataId = ?", [userdataid])
@@ -217,7 +217,7 @@ app.post('/addmovie', async (req, res) => {
     let [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
     user = user[0]
 
-    if ((user.UserRole !== "admin" && user.UserRole !== "mod") || deletinguser.UserRole === "admin") return res.status(403).json({success: false, error: "Forbidden"})
+    if (user.UserRole !== "admin" && user.UserRole !== "mod") return res.status(403).json({success: false, error: "Forbidden"})
 
     try {
       let [languagecodes] = await db.query("select LanguageCode from Languages")
@@ -309,19 +309,28 @@ app.get("/getmoviedata", async (req, res) => {
   if (!movieid || !languagecode) return res.status(400).json({success: false, error: "Missing data"})
 
   try {
-    let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [languagecode])
-    languageid = languageid[0].LanguageId
+    let [movie] = await db.query("select * from Movies where MovieId = ?", [movieid])
+    if (movie.length === 0) return res.status(404).json({succes: false, error: "Movie not found"})
+
     try {
-      let [movie] = await db.query("select MovieId, Title, MovieDescription, PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where fk_LanguageId = ? and MovieId = ?", [languageid, movieid])
-      movie = movie[0]
-      res.status(200).json({success: true, movie: movie})
+      let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [languagecode])
+      languageid = languageid[0].LanguageId
+
+      try {
+        let [movie] = await db.query("select MovieId, Title, MovieDescription, PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where fk_LanguageId = ? and MovieId = ?", [languageid, movieid])
+        movie = movie[0]
+        res.status(200).json({success: true, movie: movie})
+      } catch (error) {
+        console.error("Error:", error)
+        res.status(500).json({success: false, error: "Error while fetching the movie"})
+      }
     } catch (error) {
       console.error("Error:", error)
-      res.status(500).json({success: false, error: "Error while fetching the movie"})
+      res.status(500).json({success: false, error: "Error while fetching the language id"})
     }
   } catch (error) {
     console.error("Error:", error)
-    res.status(500).json({success: false, error: "Error while fetching the language id"})
+    res.status(500).json({success: false, error: "Error while getching the movie ID"})
   }
 })
 
@@ -330,15 +339,20 @@ app.get("/getallmoviedata", async (req, res) => {
   if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
   
   try {
-    const [languageids] = await db.query("select fk_LanguageId from MovieTranslations where fk_MovieId = ?", [movieid])
+    let [movie] = await db.query("select * from Movies where MovieId = ?", [movieid])
+    if (movie.length === 0) return res.status(404).json({succes: false, error: "Movie not found"})
 
     try {
-      let languagecodes = []
+      const [languageids] = await db.query("select fk_LanguageId from MovieTranslations where fk_MovieId = ?", [movieid])
 
-      for (lang of languageids) {
-        const [result] = await db.query("select LanguageCode from Languages where LanguageId = ?", [lang.fk_LanguageId])
-        languagecodes.push(result[0].LanguageCode)
-      }
+      try {
+        let languagecodes = []
+
+        for (lang of languageids) {
+          const [result] = await db.query("select LanguageCode from Languages where LanguageId = ?", [lang.fk_LanguageId])
+          languagecodes.push(result[0].LanguageCode)
+        }
+
         try {
           let [titles] = await db.query("select Title from MovieTranslations where fk_MovieId = ?", [movieid])
           let [descriptions] = await db.query("select MovieDescription from MovieTranslations where fk_MovieId = ?", [movieid])
@@ -371,13 +385,17 @@ app.get("/getallmoviedata", async (req, res) => {
           console.error("Error:", error)
           res.status(500).json({success: false, error: "Error while fetching translations"})
         }
+      } catch (error) {
+        console.error("Error:", error)
+        res.status(500).json({success: false, error: "Error while fetching the language codes"})
+      }
     } catch (error) {
       console.error("Error:", error)
-      res.status(500).json({success: false, error: "Error while fetching the language codes"})
+      res.status(500).json({success: false, error: "Error while fetching the available language IDs"})
     }
   } catch (error) {
     console.error("Error:", error)
-    res.status(500).json({success: false, error: "Error while fetching the available language IDs"})
+    res.status(500).json({success: false, error: "Error while getching the movie ID"})
   }
 })
 
@@ -401,7 +419,31 @@ app.delete("/deletemovie", async (req, res) => {
   if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
   if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
 
-  
+  try {
+    let [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+    user = user[0]
+    if (user.UserRole !== "admin" && user.UserRole !== "mod") return res.status(403).json({success: false, error: "Forbidden"})
+
+    try {
+      let [movie] = await db.query("select * from Movies where MovieId = ?", [movieid])
+      if (movie.length === 0) return res.status(404).json({succes: false, error: "Movie not found"})
+
+      try {
+        await db.query("delete from Movies where MovieId = ?", [movieid])
+        res.status(200).json({success: true, message: "Successfully deleted the movie"})
+      } catch (error) {
+        console.error("Error:", error)
+        res.status(500).json({success: false, error: "Error while deleting the movie"})
+      }
+    } catch (error) {
+      console.error("Error:", error)
+      res.status(500).json({success: false, error: "Error while getching the movie ID"})
+    }
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error while fetching userrole"})
+  }
+
 })
 
 app.get("/getrating", async (req, res) => {
