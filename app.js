@@ -393,16 +393,46 @@ app.patch("/editmovie", async (req, res) => {
 
 app.delete("/deletemovie", async (req, res) => {
   const {movieid} = req.body
+  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
+  if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
+
+  
 })
 
 app.get("/getrating", async (req, res) => {
   const {movieid} = req.body
+  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
 })
 
 app.get("/getcomments", async (req, res) => {
   const {movieid} = req.body
+  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
 })
 
+app.post("/addrating", async (req,res) => {
+  const {movieid} = req.body
+  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
+})
+
+app.post("/addcomment", async (req,res) => {
+  const {movieid} = req.body
+  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
+})
+
+app.patch("/editrating", async (req,res) => {
+  const {ratingid} = req.body
+  if (!ratingid) return res.status(400).json({success: false, error: "Missing data"})
+})
+
+app.patch("/editcomment", async (req,res) => {
+  const {commentid} = req.body
+  if (!commentid) return res.status(400).json({success: false, error: "Missing data"})
+})
+
+app.delete("/deletecomment", async (req,res) => {
+  const {commentid} = req.body
+  if (!commentid) return res.status(400).json({success: false, error: "Missing data"})
+})
 //////////////////////////////////////////
 
 const PORT = process.env.PORT || 3000;
