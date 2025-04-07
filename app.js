@@ -440,12 +440,12 @@ app.patch("/editmovie", async (req, res) => {
                   let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [lang])
                   languageid = languageid[0].LanguageId
 
-                  const [titles] = await db.query("select * from MovieTranslation where fk_MovieId = ? and fk_LanguageId = ?", [movieid, lang])
+                  const [titles] = await db.query("select * from MovieTranslations where fk_MovieId = ? and fk_LanguageId = ?", [movieid, languageid])
 
                   if (titles.length === 0) {
-                    await db.query("insert into MovieTranslations (Title, fk_MovieId, fk_LanguageId) values (?,?,?)", [title, movieid, lang])
+                    await db.query("insert into MovieTranslations (Title, fk_MovieId, fk_LanguageId) values (?,?,?)", [title[lang], movieid, languageid])
                   } else {
-                    await db.query("update MovieTranslations set Title = ? where fk_MovieId = ? and fk_LanguageId = ?", [title, movieid, lang])
+                    await db.query("update MovieTranslations set Title = ? where fk_MovieId = ? and fk_LanguageId = ?", [title[lang], movieid, languageid])
                   }
                 }
               }
@@ -456,17 +456,17 @@ app.patch("/editmovie", async (req, res) => {
                   let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [lang])
                   languageid = languageid[0].LanguageId
 
-                  const [descriptions] = await db.query("select * from MovieTranslation where fk_MovieId = ? and fk_LanguageId = ?", [movieid, lang])
+                  const [descriptions] = await db.query("select * from MovieTranslations where fk_MovieId = ? and fk_LanguageId = ?", [movieid, languageid])
 
                   if (descriptions.length === 0) {
-                    await db.query("insert into MovieTranslations (MovieDescription, fk_MovieId, fk_LanguageId) values (?,?,?)", [description, movieid, lang])
+                    await db.query("insert into MovieTranslations (MovieDescription, fk_MovieId, fk_LanguageId) values (?,?,?)", [description[lang], movieid, languageid])
                   } else {
-                    await db.query("update MovieTranslations set MovieDescription = ? where fk_MovieId = ? and fk_LanguageId = ?", [description, movieid, lang])
+                    await db.query("update MovieTranslations set MovieDescription = ? where fk_MovieId = ? and fk_LanguageId = ?", [description[lang], movieid, languageid])
                   }
                 }
               }
             }
-            res.status(200).json({success: false, message: "Successfully updated the movie"})
+            res.status(200).json({success: true, message: "Successfully updated the movie"})
           } catch (error) {
             console.error("Error:", error)
             res.status(500).json({success: false, error: "Error while updating the movie"})
