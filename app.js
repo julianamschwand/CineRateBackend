@@ -575,13 +575,18 @@ app.post("/rate", async (req,res) => {
 })
 
 app.post("/addcomment", async (req,res) => {
-  const {movieid} = req.body
-  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
-})
+  const {movieid, content} = req.body
+  if (!movieid || !content) return res.status(400).json({success: false, error: "Missing data"})
+  if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
 
-app.patch("/editrating", async (req,res) => {
-  const {ratingid} = req.body
-  if (!ratingid) return res.status(400).json({success: false, error: "Missing data"})
+  try {
+    await db.query("insert into Comments (Content, fk_UserDataId, fk_MovieId) values (?,?,?)", [content, req.session.user.id, movieid])
+    
+    res.status(200).json({success: true, message: "Sucessfully commented on the movie"})
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error inserting the comment"})
+  }
 })
 
 app.patch("/editcomment", async (req,res) => {
