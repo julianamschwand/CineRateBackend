@@ -590,8 +590,27 @@ app.post("/addcomment", async (req,res) => {
 })
 
 app.patch("/editcomment", async (req,res) => {
-  const {commentid} = req.body
-  if (!commentid) return res.status(400).json({success: false, error: "Missing data"})
+  const {commentid, content} = req.body
+  if (!commentid || !content) return res.status(400).json({success: false, error: "Missing data"})
+  if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
+
+  try {
+    let [userid] = await db.query("select fk_UserDataId from Comments where CommentId = ?", [commentid])
+    userid = userid[0].fk_UserDataId
+    if (req.session.user.id !== userid) return res.status(403).json({success: false, error: "Not allowed to edit other people's comments"})
+
+    try {
+      await db.query("update Comments set Content = ? where fk_UserDataId = ? and CommentId = ?", [content, req.session.user.id, commentid])
+    
+      res.status(200).json({success: true, message: "Sucessfully edited the comment"})
+    } catch (error) {
+      console.error("Error:", error)
+      res.status(500).json({success: false, error: "Error inserting the comment"})
+    } 
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error inserting the comment"})
+  }
 })
 
 app.delete("/deletecomment", async (req,res) => {
