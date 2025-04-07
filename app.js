@@ -566,11 +566,11 @@ app.post("/rate", async (req,res) => {
       res.status(200).json({success: true, message: "Sucessfully rated the movie"})
     } catch {
       console.error("Error:", error)
-      res.status(500).json({success: false, error: "Error inserting / updating the rating"})
+      res.status(500).json({success: false, error: "Error while inserting / updating the rating"})
     }
   } catch (error) {
     console.error("Error:", error)
-    res.status(500).json({success: false, error: "Error fetching ratings"})
+    res.status(500).json({success: false, error: "Error while fetching ratings"})
   }
 })
 
@@ -585,7 +585,7 @@ app.post("/addcomment", async (req,res) => {
     res.status(200).json({success: true, message: "Sucessfully commented on the movie"})
   } catch (error) {
     console.error("Error:", error)
-    res.status(500).json({success: false, error: "Error inserting the comment"})
+    res.status(500).json({success: false, error: "Error while inserting the comment"})
   }
 })
 
@@ -595,9 +595,9 @@ app.patch("/editcomment", async (req,res) => {
   if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
 
   try {
-    let [userid] = await db.query("select fk_UserDataId from Comments where CommentId = ?", [commentid])
-    userid = userid[0].fk_UserDataId
-    if (req.session.user.id !== userid) return res.status(403).json({success: false, error: "Not allowed to edit other people's comments"})
+    let [commentuserid] = await db.query("select fk_UserDataId from Comments where CommentId = ?", [commentid])
+    commentuserid = commentuserid[0].fk_UserDataId
+    if (req.session.commentuser.id !== userid) return res.status(403).json({success: false, error: "Not allowed to edit other people's comments"})
 
     try {
       await db.query("update Comments set Content = ? where fk_UserDataId = ? and CommentId = ?", [content, req.session.user.id, commentid])
@@ -605,17 +605,39 @@ app.patch("/editcomment", async (req,res) => {
       res.status(200).json({success: true, message: "Sucessfully edited the comment"})
     } catch (error) {
       console.error("Error:", error)
-      res.status(500).json({success: false, error: "Error inserting the comment"})
+      res.status(500).json({success: false, error: "Error while updating the comment"})
     } 
   } catch (error) {
     console.error("Error:", error)
-    res.status(500).json({success: false, error: "Error inserting the comment"})
+    res.status(500).json({success: false, error: "Error while checking the comment's user"})
   }
 })
 
 app.delete("/deletecomment", async (req,res) => {
   const {commentid} = req.body
   if (!commentid) return res.status(400).json({success: false, error: "Missing data"})
+  if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
+
+  try {
+    let [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+    user = user[0]
+    let [commentuser] = await db.query("select fk_UserDataId from Comments where CommentId = ?", [commentid])
+    commentuser = commentuser[0]
+
+    if (user.UserRole !== "admin" && user.UserRole !== "mod" && commentuser.fk_UserDataId !== req.session.user.id) return res.status(403).json({success: false, error: "Forbidden"})
+    
+    try {
+      await db.query("delete from Comments where CommentId = ?", [commentid])
+
+      res.status(200).json({success: true, message: "Sucessfully deleted the comment"})
+    } catch (error) {
+      console.error("Error:", error)
+      res.status(500).json({success: false, error: "Error while deleting the comment"})
+    }
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error while checking for permission"})
+  }
 })
 
 //////////////////////////////////////////
