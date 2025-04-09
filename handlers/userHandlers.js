@@ -61,11 +61,16 @@ async function login(req, res) {
 }
 
 async function logout(req, res) {
-    req.session.destroy(err => {
-        if (err) return res.status(500).json({success: false, message: 'Logout failed'})
-        res.clearCookie('SessionId')
-        res.status(200).json({success: true, message: 'Logged out successfully'})
-    })
+  if (!req.session.user) return res.status(401).json({success: false, message: 'Unauthorized'})
+
+  try {
+    req.session.destroy()
+    res.clearCookie('SessionId')
+    res.status(200).json({success: true, message: 'Logged out successfully'})
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error while logging out"})
+  }
 }
 
 async function rolemod(req, res) {
