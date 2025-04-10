@@ -3,6 +3,7 @@ const session = require("express-session")
 const MySQLStore = require("express-mysql-session")(session)
 const mysql = require("mysql2/promise")
 const bcrypt = require("bcrypt")
+const cors = require("cors")
 require("dotenv").config()
 
 const {
@@ -41,6 +42,10 @@ const { createSessionStore } = require("./db")
 
 const app = express()
 app.use(express.json())
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}))
 
 const sessionStore = createSessionStore(session);
 
