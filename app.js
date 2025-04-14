@@ -43,11 +43,10 @@ const { createSessionStore } = require("./db")
 const app = express()
 app.use(express.json())
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: true,
   credentials: true,
 }))
 
-app.options("*", cors())
 
 const sessionStore = createSessionStore(session);
 
@@ -59,9 +58,9 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: { 
-      secure: true, 
+      secure: false, 
       httpOnly: true, 
-      sameSite: "none", 
+      sameSite: "strict", 
       maxAge: 1000 * 60 * 60 
     },
   })
