@@ -47,6 +47,8 @@ app.use(cors({
   credentials: true,
 }))
 
+app.options("*", cors())
+
 const sessionStore = createSessionStore(session);
 
 app.use(
