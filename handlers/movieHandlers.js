@@ -1,7 +1,7 @@
 const { db } = require("../db.js")
 
 async function addmovie(req, res) {
-  const {title, description, poster, playbackid} = req.body 
+  const {title, description, poster, playbackid, duration, releaseyear} = req.body 
   if (!title || !description || !poster || !playbackid) return res.status(400).json({success: false, error: "Missing data"})
   if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
   
@@ -15,7 +15,7 @@ async function addmovie(req, res) {
       let [languagecodes] = await db.query("select LanguageCode from Languages")
       languagecodes = languagecodes.map(lang => lang.LanguageCode)
       try {
-        const [result] = await db.query("insert into Movies (PlaybackId, Poster) values (?,?)", [playbackid, poster])
+        const [result] = await db.query("insert into Movies (PlaybackId, Poster, Duration, ReleaseYear) values (?,?,?,?)", [playbackid, poster, duration, releaseyear])
         const movieid = result.insertId
 
         try {
@@ -54,7 +54,7 @@ async function getmovies(req, res) {
     let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [languagecode])
     languageid = languageid[0].LanguageId
     try {
-      let [movies] = await db.query("select MovieId, coalesce(Title, (select Title from MovieTranslations where fk_MovieId = MovieId and fk_LanguageId = 1), 'none') as 'Title', coalesce(MovieDescription, (select MovieDescription from MovieTranslations where fk_MovieId = MovieId and fk_LanguageId = 1), 'none') as 'Description', PlaybackId, Poster from Movies left join MovieTranslations on MovieId = fk_MovieId and fk_LanguageId = ?", [languageid])
+      let [movies] = await db.query("select MovieId, coalesce(Title, (select Title from MovieTranslations where fk_MovieId = MovieId and fk_LanguageId = 1), 'none') as 'Title', coalesce(MovieDescription, (select MovieDescription from MovieTranslations where fk_MovieId = MovieId and fk_LanguageId = 1), 'none') as 'Description', PlaybackId, Poster, Duration, ReleaseYear from Movies left join MovieTranslations on MovieId = fk_MovieId and fk_LanguageId = ?", [languageid])
       res.status(200).json({success: true, movies: movies})
     } catch (error) {
       console.error("Error:", error)
@@ -79,7 +79,7 @@ async function getmoviedata(req, res) {
       languageid = languageid[0].LanguageId
 
       try {
-        let [movie] = await db.query("select MovieId, Title, MovieDescription, PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where fk_LanguageId = ? and MovieId = ?", [languageid, movieid])
+        let [movie] = await db.query("select MovieId, Title, MovieDescription, PlaybackId, Poster, Duration, ReleaseYear from Movies join MovieTranslations on MovieId = fk_MovieId where fk_LanguageId = ? and MovieId = ?", [languageid, movieid])
         movie = movie[0]
         res.status(200).json({success: true, movie: movie})
       } catch (error) {
@@ -131,7 +131,7 @@ async function getallmoviedata(req, res) {
                 titlelanguages = titlelanguages.slice(0,-1)
                 descriptionlanguages = descriptionlanguages.slice(0,-1)
         
-                const moviequery = `select MovieId, json_object(${titlelanguages}) as Title, json_object(${descriptionlanguages}) as Description, PlaybackId, Poster from Movies join MovieTranslations on MovieId = fk_MovieId where MovieId = ?`
+                const moviequery = `select MovieId, json_object(${titlelanguages}) as Title, json_object(${descriptionlanguages}) as Description, PlaybackId, Poster, Duration, ReleaseYear from Movies join MovieTranslations on MovieId = fk_MovieId where MovieId = ?`
       
                 let [movie] = await db.query(moviequery, [movieid]) 
     
@@ -162,7 +162,7 @@ async function getallmoviedata(req, res) {
 }
 
 async function editmovie(req, res) {
-    const {movieid, title, description, playbackid, poster} = req.body
+    const {movieid, title, description, playbackid, poster, duration, releaseyear} = req.body
     if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
     if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
     
@@ -185,6 +185,12 @@ async function editmovie(req, res) {
             }
             if (poster) {
                 await db.query("update Movies set Poster = ? where MovieId = ?", [poster, movieid])
+            }
+            if (duration) {
+                await db.query("update Movies set Duration = ? where MovieId = ?", [duration, movieid])
+            }
+            if (releaseyear) {
+                await db.query("update Movies set ReleaseYear = ? where MovieId = ?", [releaseyear, movieid])
             }
             if (title) {
                 for (const lang of languagecodes) {

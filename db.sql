@@ -8,6 +8,8 @@ create table UserData(
 create table Movies(
     MovieId int auto_increment primary key,
     PlaybackId char(11) unique,
+    ReleaseYear int,
+    Duration int,
     Poster text
 );
 create table Languages(
