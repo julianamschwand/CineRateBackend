@@ -1,7 +1,7 @@
 const { db } = require("../db.js")
 
 async function getcomments(req, res) {
-    const {movieid} = req.body
+    const {movieid} = req.query
   if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
 
   try {

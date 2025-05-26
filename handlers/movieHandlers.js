@@ -47,7 +47,7 @@ async function addmovie(req, res) {
 }
 
 async function getmovies(req, res) {
-  const {languagecode} = req.body
+  const {languagecode} = req.query
   if (!languagecode) return res.status(400).json({success: false, error: "Missing data"})
 
   try {
@@ -67,7 +67,7 @@ async function getmovies(req, res) {
 }
 
 async function getmoviedata(req, res) {
-  const {movieid, languagecode} = req.body
+  const {movieid, languagecode} = req.query
   if (!movieid || !languagecode) return res.status(400).json({success: false, error: "Missing data"})
 
   try {
@@ -97,7 +97,7 @@ async function getmoviedata(req, res) {
 }
 
 async function getallmoviedata(req, res) {
-    const {movieid} = req.body
+    const {movieid} = req.query
       if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
       
       try {
