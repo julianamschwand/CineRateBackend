@@ -1,8 +1,5 @@
 const express = require("express")
 const session = require("express-session")
-const MySQLStore = require("express-mysql-session")(session)
-const mysql = require("mysql2/promise")
-const bcrypt = require("bcrypt")
 const cors = require("cors")
 require("dotenv").config()
 

@@ -2,7 +2,7 @@ const { db } = require("../db.js")
 
 async function addmovie(req, res) {
   const {title, description, poster, playbackid, duration, releaseyear} = req.body 
-  if (!title || !description || !poster || !playbackid) return res.status(400).json({success: false, error: "Missing data"})
+  if (!title || !description || !poster || !playbackid || !duration || !releaseyear) return res.status(400).json({success: false, error: "Missing data"})
   if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
   
   try {
