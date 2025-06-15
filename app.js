@@ -64,7 +64,7 @@ app.use(
       secure: isProd, 
       httpOnly: true, 
       sameSite: isProd ? "strict" : "lax", 
-      maxAge: 1000 * 60 * 60 
+      maxAge: 1000 * 60 * 60 * 24 * 7
     },
   })
 )
@@ -77,7 +77,8 @@ const storage = multer.diskStorage({
     cb(null, uploadPath);
   },
   filename: function (req, file, cb) {
-    const uniqueName = crypto.randomBytes(16).toString("hex");
+    const ext = path.extname(file.originalname);
+    const uniqueName = `${crypto.randomBytes(16).toString("hex")}${ext}`;
     cb(null, uniqueName);
   },
 });

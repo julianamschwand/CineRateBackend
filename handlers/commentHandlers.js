@@ -5,7 +5,7 @@ async function getcomments(req, res) {
   if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
 
   try {
-    const [comments] = await db.query("select CommentId, Content, (select Username from UserData where UserDataId = fk_UserDataId) as 'Username' from Comments") 
+    const [comments] = await db.query("select CommentId, Content, (select Username from UserData where UserDataId = fk_UserDataId) as 'Username', fk_UserDataId as 'CommentUserId' from Comments") 
     if (comments.length === 0) return res.status(404).json({success: false, rating: "No comments"})
 
     res.status(200).json({success: true, comments: comments})

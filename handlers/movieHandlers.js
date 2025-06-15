@@ -1,11 +1,14 @@
 const { db } = require("../db.js")
 
 async function addmovie(req, res) {
-  const {title, description, playbackid, duration, releaseyear} = req.body 
+  const {title, description, playbackid, duration, releaseyear} = req.body
   const poster = req.file.filename
   if (!title || !description || !poster || !playbackid || !duration || !releaseyear) return res.status(400).json({success: false, error: "Missing data"})
   if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
   
+  const titleJSON = JSON.parse(title)
+  const descriptionJSON = JSON.parse(description)
+
   try {
     let [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
     user = user[0]
@@ -23,11 +26,11 @@ async function addmovie(req, res) {
 
         try {
           for (const lang of languagecodes) {
-            if (title.hasOwnProperty(lang) && description.hasOwnProperty(lang)) {
+            if (titleJSON.hasOwnProperty(lang) && descriptionJSON.hasOwnProperty(lang)) {
               let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [lang])
               languageid = languageid[0].LanguageId
 
-              await db.query("insert into MovieTranslations (Title, MovieDescription, fk_LanguageId, fk_MovieId) values (?,?,?,?)", [title[lang], description[lang], languageid, movieid])
+              await db.query("insert into MovieTranslations (Title, MovieDescription, fk_LanguageId, fk_MovieId) values (?,?,?,?)", [titleJSON[lang], descriptionJSON[lang], languageid, movieid])
             }
           }
           res.status(200).json({success: true, message: "Successfully inserted the movie"})
