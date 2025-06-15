@@ -7,6 +7,7 @@ const cors = require("cors")
 require("dotenv").config()
 
 const {
+  isloggedin,
   userdata,
   register,
   login,
@@ -72,6 +73,7 @@ app.use(
 
 //Users
 
+app.get("/isloggedin", isloggedin)
 app.get("/userdata", userdata)
 app.post("/register", register)
 app.post("/login", login)

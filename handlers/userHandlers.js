@@ -1,6 +1,13 @@
 const { db } = require("../db.js")
-
 const bcrypt = require("bcrypt")
+
+async function isloggedin(req, res) {
+  if (req.session.user) {
+    res.status(200).json({success: true, loggedin: true, message: "Logged in"})
+  } else {
+    res.status(200).json({success: true, loggedin: false, message: "Not logged in"})
+  }
+}
 
 async function userdata(req, res) {
   if (!req.session.user) return res.status(401).json({success: false, message: 'Unauthorized'})
@@ -213,6 +220,7 @@ async function deleteuser(req, res) {
 }
 
 module.exports = {
+    isloggedin,
     userdata,
     register,
     login,
