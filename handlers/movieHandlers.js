@@ -1,7 +1,8 @@
 const { db } = require("../db.js")
 
 async function addmovie(req, res) {
-  const {title, description, poster, playbackid, duration, releaseyear} = req.body 
+  const {title, description, playbackid, duration, releaseyear} = req.body 
+  const poster = req.file.filename
   if (!title || !description || !poster || !playbackid || !duration || !releaseyear) return res.status(400).json({success: false, error: "Missing data"})
   if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
   
@@ -15,7 +16,9 @@ async function addmovie(req, res) {
       let [languagecodes] = await db.query("select LanguageCode from Languages")
       languagecodes = languagecodes.map(lang => lang.LanguageCode)
       try {
-        const [result] = await db.query("insert into Movies (PlaybackId, Poster, Duration, ReleaseYear) values (?,?,?,?)", [playbackid, poster, duration, releaseyear])
+        const posterPath = "/posters/" + poster
+
+        const [result] = await db.query("insert into Movies (PlaybackId, Poster, Duration, ReleaseYear) values (?,?,?,?)", [playbackid, posterPath, duration, releaseyear])
         const movieid = result.insertId
 
         try {

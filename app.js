@@ -1,6 +1,9 @@
 const express = require("express")
 const session = require("express-session")
 const cors = require("cors")
+const path = require("path");
+const crypto = require("crypto");
+const multer = require("multer");
 require("dotenv").config()
 
 const {
@@ -66,6 +69,21 @@ app.use(
   })
 )
 
+app.use("/posters", express.static(path.join(__dirname, "posters")))
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadPath = path.join(__dirname, "/posters");
+    cb(null, uploadPath);
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = crypto.randomBytes(16).toString("hex");
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+
 //////////////////////////////////////////
 
 //Users
@@ -83,7 +101,7 @@ app.delete("/deleteuser", deleteuser)
 
 //Movies
 
-app.post("/addmovie", addmovie)
+app.post("/addmovie", upload.single("poster"), addmovie)
 app.get("/getmovies", getmovies)
 app.get("/getmoviedata", getmoviedata)
 app.get("/getallmoviedata", getallmoviedata)
