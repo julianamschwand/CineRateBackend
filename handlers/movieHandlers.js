@@ -78,7 +78,7 @@ async function getmoviedata(req, res) {
 
   try {
     let [movie] = await db.query("select * from Movies where MovieId = ?", [movieid])
-    if (movie.length === 0) return res.status(404).json({succes: false, error: "Movie not found"})
+    if (movie.length === 0) return res.status(404).json({success: false, error: "Movie not found"})
 
     try {
       let [languageid] = await db.query("select LanguageId from Languages where LanguageCode = ?", [languagecode])
