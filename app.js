@@ -16,7 +16,8 @@ const {
   roleadmin,
   roleuser,
   edituser,
-  deleteuser
+  deleteuser,
+  changeselectedlanguage
 } = require("./handlers/userHandlers.js")
 
 const {
@@ -99,6 +100,7 @@ app.post("/roleadmin", roleadmin)
 app.post("/roleuser", roleuser)
 app.patch("/edituser", edituser)
 app.delete("/deleteuser", deleteuser)
+app.post("/changeselectedlanguage", changeselectedlanguage)
 
 //Movies
 

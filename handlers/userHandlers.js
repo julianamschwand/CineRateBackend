@@ -16,7 +16,7 @@ async function userdata(req, res) {
       let [user] = await db.query("select * from UserData where UserDataId = ?", [req.session.user.id])
       user = user[0]
   
-      res.status(200).json({id: user.UserDataId, username: user.Username, email: user.Email, role: user.UserRole})
+      res.status(200).json({id: user.UserDataId, username: user.Username, email: user.Email, role: user.UserRole, selectedlanguage: user.SelectedLanguage})
     } catch (error) {
       console.error("Error:", error)
       res.status(500).json({success: false, error: "Error retrieving data from the database"})
@@ -214,9 +214,23 @@ async function deleteuser(req, res) {
             res.status(500).json({success: false, error: "Error while deleting the user from the database"})
         }
     } catch (error) {
-        console.error("Error:", error)
-        res.status(500).json({success: false, error: "Error while checking the users role"})
+      console.error("Error:", error)
+      res.status(500).json({success: false, error: "Error while checking the users role"})
     }
+}
+
+async function changeselectedlanguage(req, res) {
+  const {languagecode} = req.body
+  if (!languagecode) return res.status(400).json({success: false, message: "Missing data"})
+  if (!req.session.user) return res.status(401).json({success: false, message: 'Unauthorized'})
+
+  try {
+    await db.query("update UserData set SelectedLanguage = ? where UserDataId = ?", [languagecode, req.session.user.id])
+    res.status(200).json({success: true, message: "Successfully changed Language to " + languagecode})
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error while updating selected language"})
+  }
 }
 
 module.exports = {
@@ -229,5 +243,6 @@ module.exports = {
     roleadmin,
     roleuser,
     edituser,
-    deleteuser
+    deleteuser,
+    changeselectedlanguage
 }
