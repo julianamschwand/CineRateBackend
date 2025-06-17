@@ -85,7 +85,7 @@ async function getmoviedata(req, res) {
       languageid = languageid[0].LanguageId
 
       try {
-        let [movie] = await db.query("select MovieId, Title, MovieDescription, PlaybackId, Poster, Duration, ReleaseYear from Movies join MovieTranslations on MovieId = fk_MovieId where fk_LanguageId = ? and MovieId = ?", [languageid, movieid])
+        let [movie] = await db.query("select MovieId, coalesce(Title, (select Title from MovieTranslations where fk_MovieId = MovieId and fk_LanguageId = 1), 'none') as 'Title', coalesce(MovieDescription, (select MovieDescription from MovieTranslations where fk_MovieId = MovieId and fk_LanguageId = 1), 'none') as 'Description', PlaybackId, Poster, Duration, ReleaseYear from Movies left join MovieTranslations on MovieId = fk_MovieId and fk_LanguageId = ? where MovieId = ?", [languageid, movieid])
         movie = movie[0]
         res.status(200).json({success: true, movie: movie})
       } catch (error) {
