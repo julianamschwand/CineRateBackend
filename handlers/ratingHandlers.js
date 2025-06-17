@@ -6,8 +6,24 @@ async function getrating(req, res) {
 
   try {
     let [rating] = await db.query("select round(avg(RatingValue), 2) as 'Rating' from Ratings where fk_MovieId = ? group by RatingValue", [movieid])
-    if (rating.length === 0) return res.status(404).json({success: false, rating: "No rating"})
+    if (rating.length === 0) return res.status(200).json({success: true, rating: "No rating"})
     rating = rating[0].Rating
+
+    res.status(200).json({success: true, rating: rating})
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error fetching rating"})
+  }
+}
+
+async function getuserrating(req, res) {
+  const {movieid} = req.query
+  if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
+  if (!req.session.user) return res.status(401).json({success: false, message: 'Unauthorized'})
+
+  try {
+    let [rating] = await db.query("select RatingValue from Ratings where fk_MovieId = ? and fk_UserDataId = ?", [movieid, req.session.user.id])
+    rating = rating[0].RatingValue
 
     res.status(200).json({success: true, rating: rating})
   } catch (error) {
@@ -45,5 +61,6 @@ async function rate(req, res) {
 
 module.exports = {
   getrating,
+  getuserrating,
   rate,
 };

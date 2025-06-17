@@ -24,8 +24,8 @@ async function userdata(req, res) {
 }
 
 async function register(req, res) {
-  const {username, email, password} = req.body
-  if (!username || !email || !password ) return res.status(400).json({success: false, error: "Missing data"})   
+  const {username, email, password, selectedlanguage} = req.body
+  if (!username || !email || !password || !selectedlanguage) return res.status(400).json({success: false, error: "Missing data"})   
     try {
       const [dbusername] = await db.query("select * from UserData where Username = ?", [username])
       const [dbemail] = await db.query("select * from UserData where Email = ?", [email])
@@ -35,7 +35,7 @@ async function register(req, res) {
   
       try {
         const hashedpassword = await bcrypt.hash(password, 10)
-        const [result] = await db.query("insert into UserData (Username, Email, UserPassword) values (?,?,?)", [username, email, hashedpassword])
+        const [result] = await db.query("insert into UserData (Username, Email, UserPassword, SelectedLanguage) values (?,?,?,?)", [username, email, hashedpassword, selectedlanguage])
         req.session.user = { id: result.insertId }
         res.status(200).json({success: true, message: "User registered successfully", userdataid: result.insertId})
       } catch (error) {

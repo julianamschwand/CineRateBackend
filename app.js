@@ -31,7 +31,7 @@ const {
 
 const { getlanguages } = require("./handlers/languageHandlers")
 
-const { getrating, rate } = require("./handlers/ratingHandlers")
+const { getrating, rate, getuserrating } = require("./handlers/ratingHandlers")
 
 const {
   getcomments,
@@ -118,6 +118,7 @@ app.get("/getlanguages", getlanguages)
 //Ratings
 
 app.get("/getrating", getrating)
+app.get("/getuserrating", getuserrating)
 app.post("/rate", rate)
 
 //Comments
