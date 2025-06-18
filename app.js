@@ -9,6 +9,7 @@ require("dotenv").config()
 const {
   isloggedin,
   userdata,
+  getallusers,
   register,
   login,
   logout,
@@ -64,7 +65,7 @@ app.use(
     cookie: { 
       secure: isProd, 
       httpOnly: true, 
-      sameSite: isProd ? "strict" : "lax", 
+      sameSite: "lax", 
       maxAge: 1000 * 60 * 60 * 24 * 7
     },
   })
@@ -92,6 +93,7 @@ const upload = multer({ storage });
 
 app.get("/isloggedin", isloggedin)
 app.get("/userdata", userdata)
+app.get("/getallusers", getallusers)
 app.post("/register", register)
 app.post("/login", login)
 app.post("/logout", logout)
@@ -108,7 +110,7 @@ app.post("/addmovie", upload.single("poster"), addmovie)
 app.get("/getmovies", getmovies)
 app.get("/getmoviedata", getmoviedata)
 app.get("/getallmoviedata", getallmoviedata)
-app.patch("/editmovie", editmovie)
+app.patch("/editmovie", upload.single("poster"), editmovie)
 app.delete("/deletemovie", deletemovie)
 
 //Languages

@@ -168,7 +168,13 @@ async function getallmoviedata(req, res) {
 }
 
 async function editmovie(req, res) {
-    const {movieid, title, description, playbackid, poster, duration, releaseyear} = req.body
+    const {movieid, title, description, playbackid, duration, releaseyear} = req.body
+
+    let poster = null
+    if (req.file) {
+      poster = req.file.filename 
+    }
+
     if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
     if (!req.session.user) return res.status(401).json({success: false, error: "Unauthorized"})
     

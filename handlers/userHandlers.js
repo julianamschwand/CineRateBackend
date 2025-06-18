@@ -23,6 +23,28 @@ async function userdata(req, res) {
     }
 }
 
+async function getallusers(req, res) {
+  if (!req.session.user) return res.status(401).json({success: false, message: 'Unauthorized'})
+
+  try {
+    let [user] = await db.query("select UserRole from UserData where UserDataId = ?", [req.session.user.id])
+    user = user[0]
+    if (user.UserRole !== "admin" ) return res.status(403).json({success: false, error: "Forbidden"})
+    
+    try {
+      const [users] = await db.query("select UserDataId, Username, UserRole from UserData")
+
+      res.status(200).json({success: true, users: users})
+    } catch (error) {
+      console.error("Error:", error)
+      res.status(500).json({success: false, error: "Error while fetching users"})
+    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            
+  } catch (error) {
+    console.error("Error:", error)
+    res.status(500).json({success: false, error: "Error while trying to check userrole"})
+  }
+}
+
 async function register(req, res) {
   const {username, email, password, selectedlanguage} = req.body
   if (!username || !email || !password || !selectedlanguage) return res.status(400).json({success: false, error: "Missing data"})   
@@ -119,12 +141,12 @@ async function roleadmin(req, res) {
       let [updatinguser] = await db.query("select Username from UserData where UserDataId = ?", [userdataid])
       if (user.length === 0) return res.status(404).json({success: false, error: "User not found"})
       updatinguser = updatinguser[0]
-  
-      if (user[0] !== "admin") return res.status(403).json({success: false, error: "Forbidden"})
+      
+      if (user.UserRole !== "admin") return res.status(403).json({success: false, error: "Forbidden"})
   
       try {
         await db.query("update UserData set UserRole = 'admin' where UserDataId = ?", [userdataid])
-        res.status(200).json({success: true, message: `Successfully made '${updatinguser[0].Username}' an admin`})
+        res.status(200).json({success: true, message: `Successfully made '${updatinguser.Username}' an admin`})
       } catch (error) {
         console.error("Error:", error)
         res.status(500).json({success: false, error: "Error while updating the database"})
@@ -150,7 +172,7 @@ async function roleuser(req, res) {
 
         try {
             await db.query("update UserData set UserRole = 'user' where UserDataId = ?", [userdataid])
-            res.status(200).json({success: true, message: `Successfully made '${updatinguser[0].Username}' a user`})
+            res.status(200).json({success: true, message: `Successfully made '${updatinguser.Username}' a user`})
         } catch (error) {
             console.error("Error:", error)
             res.status(500).json({success: false, error: "Error while updating the database"})
@@ -207,7 +229,7 @@ async function deleteuser(req, res) {
         
         try {
             await db.query("delete from UserData where UserDataId = ?", [userdataid])
-            await db.query("delete sessions where data like ?", [`%"id":${userdataid}%`]);
+            await db.query("delete from sessions where data like ?", [`%"id":${userdataid}%`]);
             res.status(200).json({success: true, message: `Successfully deleted '${deletinguser.Username}'`})
         } catch (error) {
             console.error("Error:", error)
@@ -236,6 +258,7 @@ async function changeselectedlanguage(req, res) {
 module.exports = {
     isloggedin,
     userdata,
+    getallusers,
     register,
     login,
     logout,
