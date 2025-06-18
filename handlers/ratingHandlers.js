@@ -23,6 +23,7 @@ async function getuserrating(req, res) {
 
   try {
     let [rating] = await db.query("select RatingValue from Ratings where fk_MovieId = ? and fk_UserDataId = ?", [movieid, req.session.user.id])
+    if (rating.length == 0) return res.status(200).json({success: true, rating: undefined})
     rating = rating[0].RatingValue
 
     res.status(200).json({success: true, rating: rating})

@@ -5,7 +5,7 @@ async function getcomments(req, res) {
   if (!movieid) return res.status(400).json({success: false, error: "Missing data"})
 
   try {
-    const [comments] = await db.query("select CommentId, Content, (select Username from UserData where UserDataId = fk_UserDataId) as 'Username', fk_UserDataId as 'CommentUserId' from Comments") 
+    const [comments] = await db.query("select CommentId, Content, (select Username from UserData where UserDataId = fk_UserDataId) as 'Username', fk_UserDataId as 'CommentUserId' from Comments where fk_MovieId = ?", [movieid]) 
     
     res.status(200).json({success: true, comments: comments})
   } catch (error) {
@@ -37,7 +37,7 @@ async function editcomment(req, res) {
       try {
         let [commentuserid] = await db.query("select fk_UserDataId from Comments where CommentId = ?", [commentid])
         commentuserid = commentuserid[0].fk_UserDataId
-        if (req.session.commentuser.id !== userid) return res.status(403).json({success: false, error: "Not allowed to edit other people's comments"})
+        if (req.session.user.id !== commentuserid) return res.status(403).json({success: false, error: "Not allowed to edit other people's comments"})
     
         try {
           await db.query("update Comments set Content = ? where fk_UserDataId = ? and CommentId = ?", [content, req.session.user.id, commentid])
