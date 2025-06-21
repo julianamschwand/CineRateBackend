@@ -50,6 +50,7 @@ app.use(cors({
   credentials: true,
 }))
 
+app.set('trust proxy', 2)
 
 const sessionStore = createSessionStore(session);
 
